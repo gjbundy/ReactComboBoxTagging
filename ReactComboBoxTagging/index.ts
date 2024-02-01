@@ -2,7 +2,7 @@ import { IInputs, IOutputs } from "./generated/ManifestTypes";
 import { ComboboxTagPicker, IComboBoxTagPickerProps } from "./components/ComboBox";
 import { lightThemeCompanyBlue, darkThemeCompanyBlue } from "./customthemes/CompanyBlue";
 import * as React from "react";
-import { teamsLightTheme, teamsDarkTheme, webLightTheme, webDarkTheme, Option, Skeleton, Theme, } from "@fluentui/react-components";
+import { teamsLightTheme, teamsDarkTheme, webLightTheme, webDarkTheme, Option, Skeleton, Theme, Spinner, } from "@fluentui/react-components";
 import type { SkeletonProps } from "@fluentui/react-components";
 
 export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IInputs, IOutputs> {
@@ -58,22 +58,22 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
             this.notifyOutputChanged();
         } else {
             // Fetch the data from the table asynchronously
-            console.log("Fetching data from the table: ", tableName)
-            await this.getOptionsFromTable(tableName).then((options) => {
-                console.log("Data received from the table first: ", options);
-                _tagOptionsFromTable = options;
-                this.tagOptionsFromTable = _tagOptionsFromTable;
-                this.loadedDataDone = true;
-                this.notifyOutputChanged();
-            }).catch((error) => {
-                console.error("Error fetching data from the table: ", error);
-                // Handle error appropriately
-            });
+            // console.log("Fetching data from the table: ", tableName)
+            // await this.getOptionsFromTable(tableName).then((options) => {
+            //     console.log("Data received from the table first: ", options);
+            //     _tagOptionsFromTable = options;
+            //     this.tagOptionsFromTable = _tagOptionsFromTable;
+            //     this.loadedDataDone = true;
+            //     this.notifyOutputChanged();
+            // }).catch((error) => {
+            //     console.error("Error fetching data from the table: ", error);
+            //     // Handle error appropriately
+            // });
 
             //Set temporary Values when testing locally only
-            // this.tagOptionsFromTable = ["No Options Retrieved", "Test 1", "Test 2"];
-            // this.loadedDataDone = true;
-            // this.notifyOutputChanged();
+            this.tagOptionsFromTable = ["No Options Retrieved", "Test 1", "Test 2"];
+            this.loadedDataDone = true;
+            this.notifyOutputChanged();
         }
 
         switch (_themeSelected) {
@@ -122,8 +122,11 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
         console.log("Starting the updateView method and the loadedDataDone is: ", this.loadedDataDone);
         if (!this.loadedDataDone) {
             console.log("Should display the Skeleton component now.");
+            // return React.createElement(
+            //     Skeleton, { width: "100%" }
+            // );
             return React.createElement(
-                Skeleton, { width: "100%" }
+                Spinner, { label: "Fetching Data from the Table" }
             );
         } else {
             console.log("Should display the ComboBoxTagPicker component now.");

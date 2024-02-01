@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Option, Theme, Combobox, makeStyles, shorthands, tokens, useId, Tag, useComboboxFilter, FluentProvider } from "@fluentui/react-components"
+import { Option, Theme, Combobox, makeStyles, shorthands, tokens, useId, Tag, useComboboxFilter, FluentProvider, Button } from "@fluentui/react-components"
 import type { ComboboxProps } from "@fluentui/react-components";
 
 const useState = React.useState;
@@ -30,6 +30,16 @@ const useStyles = makeStyles({
         minHeight: "32px", // Minimum height to start with
         flexGrow: 1, // Used to make the container grow based on content
     },
+    comboBoxAndButton:{
+        display: "flex",
+        flexDirection: "row",
+        justifyContent: "flex-start",
+        flexWrap: "wrap",
+        width: "100%", // Full width
+        minHeight: "32px", // Minimum height to start with
+        flexGrow: 1, // Used to make the container grow based on content
+        ...shorthands.gap("10px"),
+    }
 });
 
 export interface IComboBoxTagPickerProps extends ComboboxProps {
@@ -115,6 +125,10 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
     const onTagClick = (option: string, index: number) => {
         // remove selected option
         const updatedOptions = selectedOptions.filter((o) => o !== option);
+        if(newTags.includes(option)){
+            const updatedNewTags = newTags.filter((o) => o !== option);
+            setNewTags(updatedNewTags);
+        }
         setSelectedOptions(updatedOptions);
         if (props.onSelectedOptionsChanged) {
             props.onSelectedOptionsChanged(updatedOptions);
@@ -145,24 +159,36 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
                             ))) : null}
                     </FluentProvider>
                 </div>
-                <Combobox
-                    appearance="outline"
-                    aria-labelledby={labelledBy}
-                    multiselect={true}
-                    placeholder="Select one or more tags"
-                    selectedOptions={selectedOptions}
-                    onOptionSelect={onSelect}
-                    onChange={(ev) => setInputValue(ev.target.value)} //added for filtering implementation
-                    onBlur={handleBlur} //Added to reset search/filter when Combobox loses focus
-                    onKeyDown={handleKeyDown} //Added for save on enter
-                    ref={comboboxInputRef}
-                    {...props}
-                >
-                    {/* {options.map((option) => (
-                        <Option key={option}>{option}</Option>
-                    ))} */}
-                    {filteredOptions}
-                </Combobox>
+                <div className={styles.comboBoxAndButton}>
+                    <Combobox
+                        appearance="outline"
+                        aria-labelledby={labelledBy}
+                        multiselect={true}
+                        placeholder="Select one or more tags"
+                        selectedOptions={selectedOptions}
+                        onOptionSelect={onSelect}
+                        onChange={(ev) => setInputValue(ev.target.value)} //added for filtering implementation
+                        onBlur={handleBlur} //Added to reset search/filter when Combobox loses focus
+                        onKeyDown={handleKeyDown} //Added for save on enter
+                        ref={comboboxInputRef}
+                        {...props}
+                    >
+                        {/* {options.map((option) => (
+                            <Option key={option}>{option}</Option>
+                        ))} */}
+                        {filteredOptions}
+                    </Combobox>
+                    <Button
+                        appearance="primary"
+                        disabled={newTags.length === 0}
+                        onClick={() => {
+                            console.log("selectedOptions: ", selectedOptions);
+                            console.log("newTags: ", newTags);
+                        }}
+                    >
+                        Save New Tags
+                    </Button>
+                </div>
             </div>
         </FluentProvider>
 
