@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<manifest>
+  <control namespace="GBControls" constructor="ReactComboBoxTagging" version="0.0.1" display-name-key="ReactComboBoxTagging" description-key="ReactComboBoxTagging description" control-type="virtual" >
+    <external-service-usage enabled="false" />
+    <property name="Tags" display-name-key="Tags" description-key="Tags" of-type="SingleLine.Text" usage="bound" required="true" />
+    <property name="TagsDB" display-name-key="TagsDB" description-key="TagsDB" of-type="SingleLine.Text" usage="input" required="true" />
+    <property name="Theme" display-name-key="Theme" description-key="Theme Selector" of-type="Enum" usage="input" required="false">
+      <value name="Use Platform Theme" display-name-key="Use Platform Theme" description-key="Use Platform Theme">Use Platform Theme</value>
+      <value name="Web Light Theme" display-name-key="Web Light Theme" description-key="Web Light Theme">Web Light Theme</value>
+      <value name="Web Dark Theme" display-name-key="Web Dark Theme" description-key="Web Dark Theme">Web Dark Theme</value>
+      <value name="Teams Light Theme" display-name-key="Teams Light Theme" description-key="Teams Light Theme">Teams Light Theme</value>
+      <value name="Teams Dark Theme" display-name-key="Teams Dark Theme" description-key="Teams Dark Theme">Teams Dark Theme</value>
+      <value name="Light Theme Company Blue" display-name-key="Light Theme Company Blue" description-key="Light Theme Company Blue">Company Blue Light Theme</value>
+      <value name="Dark Theme Company Blue" display-name-key="Dark Theme Company Blue" description-key="Dark Theme Company Blue">Company Blue Dark Theme</value>
+    </property>
+    <resources>
+      <code path="index.ts" order="1"/>
+      <platform-library name="React" version="16.8.6" />
+      <platform-library name="Fluent" version="8.29.0" />
+      <!-- UNCOMMENT TO ADD MORE RESOURCES
+      <css path="css/ReactComboBoxTagging.css" order="1" />
+      <resx path="strings/ReactComboBoxTagging.1033.resx" version="1.0.0" />
+      -->
+    </resources>
+    <feature-usage>
+      <uses-feature name="Utility" required="true" />
+      <uses-feature name="WebAPI" required="true" />
+    </feature-usage>
+  </control>
+</manifest>
