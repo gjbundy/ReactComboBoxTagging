@@ -58,22 +58,22 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
             this.notifyOutputChanged();
         } else {
             // Fetch the data from the table asynchronously
-            // console.log("Fetching data from the table: ", tableName)
-            // await this.getOptionsFromTable(tableName).then((options) => {
-            //     console.log("Data received from the table first: ", options);
-            //     _tagOptionsFromTable = options;
-            //     this.tagOptionsFromTable = _tagOptionsFromTable;
-            //     this.loadedDataDone = true;
-            //     this.notifyOutputChanged();            
-            // }).catch((error) => {
-            //     console.error("Error fetching data from the table: ", error);
-            //     // Handle error appropriately
-            // });
+            console.log("Fetching data from the table: ", tableName)
+            await this.getOptionsFromTable(tableName).then((options) => {
+                console.log("Data received from the table first: ", options);
+                _tagOptionsFromTable = options;
+                this.tagOptionsFromTable = _tagOptionsFromTable;
+                this.loadedDataDone = true;
+                this.notifyOutputChanged();
+            }).catch((error) => {
+                console.error("Error fetching data from the table: ", error);
+                // Handle error appropriately
+            });
 
-            //Set temporary Values
-            this.tagOptionsFromTable = ["No Options Retrieved", "Test 1", "Test 2"];
-            this.loadedDataDone = true;
-            this.notifyOutputChanged();
+            //Set temporary Values when testing locally only
+            // this.tagOptionsFromTable = ["No Options Retrieved", "Test 1", "Test 2"];
+            // this.loadedDataDone = true;
+            // this.notifyOutputChanged();
         }
 
         switch (_themeSelected) {
@@ -121,27 +121,28 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
 
         console.log("Starting the updateView method and the loadedDataDone is: ", this.loadedDataDone);
         if (!this.loadedDataDone) {
+            console.log("Should display the Skeleton component now.");
             return React.createElement(
                 Skeleton, { width: "100%" }
-            )
+            );
+        } else {
+            console.log("Should display the ComboBoxTagPicker component now.");
+            // Retrieve the value of themeSelected from above
+            let themeSelected: Theme = this.themeSelected as unknown as Theme;
+
+            //retrieve the value of tagOptionsFromTable from above
+            let tagOptionsFromTablePassed: string[] = this.tagOptionsFromTable;
+
+            console.log("In the updateVew method: ", tagOptionsFromTablePassed);
+            return React.createElement(ComboboxTagPicker, {
+                availableOptions: this.availableOptions,
+                thisSelectedOption: this.thisSelectedOption,
+                initialSelectedOptionsString: this.selectedOptionsOutput,
+                theme: themeSelected,
+                tagOptionsFromTable: tagOptionsFromTablePassed,
+                onSelectedOptionsChanged: this.handleSelectedOptions
+            } as IComboBoxTagPickerProps);
         }
-
-        // Retrieve the value of themeSelected from above
-        let themeSelected: Theme = this.themeSelected as unknown as Theme;
-
-        //retrieve the value of tagOptionsFromTable from above
-        let tagOptionsFromTablePassed: string[] = this.tagOptionsFromTable;
-
-        console.log("In the updateVew method: ", tagOptionsFromTablePassed);
-        return React.createElement(ComboboxTagPicker, {
-            availableOptions: this.availableOptions,
-            thisSelectedOption: this.thisSelectedOption,
-            initialSelectedOptionsString: this.selectedOptionsOutput,
-            theme: themeSelected,
-            tagOptionsFromTable: tagOptionsFromTablePassed,
-            //onOptionSelect: this.selectedOptionsOutput,
-            onSelectedOptionsChanged: this.handleSelectedOptions
-        } as IComboBoxTagPickerProps);
     }
 
     /**
@@ -164,6 +165,5 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
         const result = await this.context.webAPI.retrieveMultipleRecords(tableName);
         console.log("Data being returned from the table: ", result.entities.map(entity => entity['dtapps_tagtext']));
         return result.entities.map(entity => entity['dtapps_tagtext']);
-
     }
 }

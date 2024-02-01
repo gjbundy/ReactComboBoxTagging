@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Option, Theme, Combobox, makeStyles, shorthands, tokens, useId, Tag, useComboboxFilter, FluentProvider } from "@fluentui/react-components"
-import type { ComboboxProps, ForwardRefComponent, OptionProps } from "@fluentui/react-components";
+import type { ComboboxProps } from "@fluentui/react-components";
 
 const useState = React.useState;
 
@@ -11,7 +11,7 @@ const useStyles = makeStyles({
         gridTemplateRows: "repeat(1fr)",
         justifyItems: "start",
         ...shorthands.gap("2px"),
-        maxWidth: "400px",
+        //maxWidth: "400px",
     },
     tagsList: {
         listStyleType: "none",
@@ -32,13 +32,12 @@ const useStyles = makeStyles({
     },
 });
 
-export interface IComboBoxTagPickerProps {
+export interface IComboBoxTagPickerProps extends ComboboxProps {
     thisSelectedOption: string | undefined;
     availableOptions: typeof Option[];
     theme: Theme;
     initialSelectedOptionsString?: string;
     tagOptionsFromTable: string[];
-    //onOptionSelect?: (event: any, data: any) => void;
     onSelectedOptionsChanged?: (selectedOptions: string[]) => void;
 }
 
@@ -46,16 +45,47 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
     const { thisSelectedOption, availableOptions, theme, tagOptionsFromTable } = props;
     const comboId = useId("combo-multi");
     const selectedListId = `${comboId}-selection`;
-    const [inputValue, setInputValue] = React.useState('');
+    const [inputValue, setInputValue] = React.useState(''); //added for filtering implementation
+    const [newTags, setNewTags] = React.useState<string[]>([]); //added for tracking new tags
+    const newTagStyle = { backgroundColor: 'green', color: 'white' }; //added for new tag styling
 
     // refs for managing focus when removing tags
     const selectedListRef = React.useRef<HTMLUListElement>(null);
     const comboboxInputRef = React.useRef<HTMLInputElement>(null);
 
-    //define temporary options for testing
-    //const options = ["Garrett", "Aadi", "DJ", "Jamie", "Stephanie", "Lindsey", "Louise", "Tanner",]
+    // Handler to reset search/filter when Combobox loses focus
+    const handleBlur = () => {
+        setInputValue(''); // Reset the inputValue state
+    };
 
-    const options = tagOptionsFromTable;
+    //Testing to see if I can filter the options
+    const filteredOptions = useComboboxFilter(inputValue, tagOptionsFromTable, {
+        noOptionsMessage: 'No tags match your search. Press enter to add a new tag.',
+    });
+
+    const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+        if (event.key === 'Enter' && inputValue.trim() !== '' && !selectedOptions.includes(inputValue)) {
+            // Add the new tag (current inputValue) to selectedOptions
+            const newSelectedOptions = [...selectedOptions, inputValue.trim()];
+            setSelectedOptions(newSelectedOptions);
+
+            // Add the new tag to the newTags state
+            setNewTags((prevNewTags) => [...prevNewTags, inputValue.trim()]);
+
+
+            // Optionally, call onSelectedOptionsChanged if it needs to trigger external actions
+            if (props.onSelectedOptionsChanged) {
+                props.onSelectedOptionsChanged(newSelectedOptions);
+            }
+
+            // Reset inputValue to clear the combobox input field
+            setInputValue('');
+        }
+    };
+
+
+    //removed for filtering implementation:
+    //const options = tagOptionsFromTable;
     //console.log("options: ", options)
 
     const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
@@ -107,7 +137,9 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
                                     shape="circular"
                                     dismissible
                                     dismissIcon={{ "aria-label": "remove" }}
-                                    onClick={() => onTagClick(option, i)}>
+                                    onClick={() => onTagClick(option, i)}
+                                    style={newTags.includes(option) ? newTagStyle : {}}
+                                    >
                                     {option}
                                 </Tag>
                             ))) : null}
@@ -120,12 +152,16 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
                     placeholder="Select one or more tags"
                     selectedOptions={selectedOptions}
                     onOptionSelect={onSelect}
+                    onChange={(ev) => setInputValue(ev.target.value)} //added for filtering implementation
+                    onBlur={handleBlur} //Added to reset search/filter when Combobox loses focus
+                    onKeyDown={handleKeyDown} //Added for save on enter
                     ref={comboboxInputRef}
                     {...props}
                 >
-                    {options.map((option) => (
+                    {/* {options.map((option) => (
                         <Option key={option}>{option}</Option>
-                    ))}
+                    ))} */}
+                    {filteredOptions}
                 </Combobox>
             </div>
         </FluentProvider>
