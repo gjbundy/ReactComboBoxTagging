@@ -1,8 +1,11 @@
 import * as React from "react";
-import { Option, Theme, Combobox, makeStyles, shorthands, tokens, useId, Tag, useComboboxFilter, FluentProvider, Button } from "@fluentui/react-components"
+import { useConst, useForceUpdate } from '@fluentui/react-hooks';
+import { IInputs } from "../generated/ManifestTypes";
+import { Option, Combobox, Theme, Spinner, makeStyles, shorthands, tokens, useId, Tag, useComboboxFilter, FluentProvider, Button } from "@fluentui/react-components"
 import type { ComboboxProps } from "@fluentui/react-components";
 
 const useState = React.useState;
+
 
 const useStyles = makeStyles({
     root: {
@@ -11,7 +14,6 @@ const useStyles = makeStyles({
         gridTemplateRows: "repeat(1fr)",
         justifyItems: "start",
         ...shorthands.gap("2px"),
-        //maxWidth: "400px",
     },
     tagsList: {
         listStyleType: "none",
@@ -30,7 +32,7 @@ const useStyles = makeStyles({
         minHeight: "32px", // Minimum height to start with
         flexGrow: 1, // Used to make the container grow based on content
     },
-    comboBoxAndButton:{
+    comboBoxAndButton: {
         display: "flex",
         flexDirection: "row",
         justifyContent: "flex-start",
@@ -43,20 +45,27 @@ const useStyles = makeStyles({
 });
 
 export interface IComboBoxTagPickerProps extends ComboboxProps {
+    context: ComponentFramework.Context<IInputs>;
+    tableName: string;
     thisSelectedOption: string | undefined;
     availableOptions: typeof Option[];
     theme: Theme;
     initialSelectedOptionsString?: string;
-    tagOptionsFromTable: string[];
     onSelectedOptionsChanged?: (selectedOptions: string[]) => void;
+    onSaveTags: (newTags: string[]) => void;
 }
 
 export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => {
-    const { thisSelectedOption, availableOptions, theme, tagOptionsFromTable } = props;
+    const { thisSelectedOption, availableOptions, theme, onSaveTags, context, tableName } = props;
+    const [optionsFromTable, setOptionsFromTable] = useState<string[]>([]);
+    const styles = useStyles();
+    const forceUpdate = useForceUpdate();
     const comboId = useId("combo-multi");
     const selectedListId = `${comboId}-selection`;
     const [inputValue, setInputValue] = React.useState(''); //added for filtering implementation
     const [newTags, setNewTags] = React.useState<string[]>([]); //added for tracking new tags
+    const [isComponentLoading, setIsLoading] = React.useState<boolean>(true);
+    const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
     const newTagStyle = { backgroundColor: 'green', color: 'white' }; //added for new tag styling
 
     // refs for managing focus when removing tags
@@ -68,8 +77,7 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
         setInputValue(''); // Reset the inputValue state
     };
 
-    //Testing to see if I can filter the options
-    const filteredOptions = useComboboxFilter(inputValue, tagOptionsFromTable, {
+    const filteredOptions = useComboboxFilter(inputValue, optionsFromTable, {
         noOptionsMessage: 'No tags match your search. Press enter to add a new tag.',
     });
 
@@ -93,29 +101,28 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
         }
     };
 
-
-    //removed for filtering implementation:
-    //const options = tagOptionsFromTable;
-    //console.log("options: ", options)
-
-    const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-    const styles = useStyles();
-
-    // set initial selected options
     React.useEffect(() => {
-        if (props.initialSelectedOptionsString) {
-            //split the string into an array of options
-            const initialOptions = props.initialSelectedOptionsString.split(",").map((o) => o.trim());
-            setSelectedOptions(initialOptions);
-            if (props.onSelectedOptionsChanged) {
-                props.onSelectedOptionsChanged(initialOptions);
+        const getOptionsFromTable = async () => {
+            console.log("inside the useEffect for getOptionsFromTable. Starting async call to retrieveMultipleRecords, with tableName: ", tableName);
+            const result = await props.context.webAPI.retrieveMultipleRecords(tableName);
+            console.log("result: ", result.entities.map(entity => entity['dtapps_tagtext']));
+            setOptionsFromTable(result.entities.map(entity => entity['dtapps_tagtext']));
+        };
+        getOptionsFromTable().then(() => {
+            console.log("inside of the then clause for getOptionsFromTable, with props.initialSelectedOptionsString: ", props.initialSelectedOptionsString);
+            if(props.initialSelectedOptionsString) {
+                const initialOptions = props.initialSelectedOptionsString.split(",").map((o) => o.trim());
+                setSelectedOptions(initialOptions);
+                if (props.onSelectedOptionsChanged) {
+                    props.onSelectedOptionsChanged(initialOptions);
+                }
             }
-        }
-    }, []); // Empty dependency array means this effect runs once on mount
-
+            setIsLoading(false);
+        });
+    }, [context, tableName, props.initialSelectedOptionsString]);
 
     const onSelect: ComboboxProps["onOptionSelect"] = (event, data) => {
-        console.log("onSelect: ", data.selectedOptions);
+        //console.log("onSelect: ", data.selectedOptions);
         setSelectedOptions(data.selectedOptions);
         if (props.onSelectedOptionsChanged) {
             props.onSelectedOptionsChanged(data.selectedOptions);
@@ -125,7 +132,7 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
     const onTagClick = (option: string, index: number) => {
         // remove selected option
         const updatedOptions = selectedOptions.filter((o) => o !== option);
-        if(newTags.includes(option)){
+        if (newTags.includes(option)) {
             const updatedNewTags = newTags.filter((o) => o !== option);
             setNewTags(updatedNewTags);
         }
@@ -138,61 +145,66 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
     const labelledBy =
         selectedOptions.length > 0 ? `${comboId} ${selectedListId}` : comboId;
 
-    return (
-        <FluentProvider theme={props.theme}>
-            <div className={styles.root}>
-                {/* <label id={comboId}>Tags for this record</label> */}
-                <div className={styles.tagContainer}>
-                    <FluentProvider theme={props.theme}>
-                        {selectedOptions.length ? (
-                            selectedOptions.map((option, i) => (
-                                <Tag key={i}
-                                    appearance="brand"
-                                    shape="circular"
-                                    dismissible
-                                    dismissIcon={{ "aria-label": "remove" }}
-                                    onClick={() => onTagClick(option, i)}
-                                    style={newTags.includes(option) ? newTagStyle : {}}
+    if (isComponentLoading) {
+        return (
+            React.createElement(
+                Spinner, { label: "Fetching Tags..." }
+            ));
+    } else {
+        return (
+            <FluentProvider theme={props.theme}>
+                <div className={styles.root}>
+                    {/* <label id={comboId}>Tags for this record</label> */}
+                    <div className={styles.tagContainer}>
+                        <FluentProvider theme={props.theme}>
+                            {selectedOptions.length ? (
+                                selectedOptions.map((option, i) => (
+                                    <Tag key={i}
+                                        appearance="brand"
+                                        shape="circular"
+                                        dismissible
+                                        dismissIcon={{ "aria-label": "remove" }}
+                                        onClick={() => onTagClick(option, i)}
+                                        style={newTags.includes(option) ? newTagStyle : {}}
                                     >
-                                    {option}
-                                </Tag>
-                            ))) : null}
-                    </FluentProvider>
+                                        {option}
+                                    </Tag>
+                                ))) : null}
+                        </FluentProvider>
+                    </div>
+                    <div className={styles.comboBoxAndButton}>
+                        <Combobox
+                            appearance="outline"
+                            aria-labelledby={labelledBy}
+                            multiselect={true}
+                            placeholder="Select one or more tags"
+                            selectedOptions={selectedOptions}
+                            onOptionSelect={onSelect}
+                            onChange={(ev) => setInputValue(ev.target.value)} //added for filtering implementation
+                            onBlur={handleBlur} //Added to reset search/filter when Combobox loses focus
+                            onKeyDown={handleKeyDown} //Added for save on enter
+                            ref={comboboxInputRef}
+                            {...props}
+                        >
+                            {filteredOptions}
+                        </Combobox>
+                        <Button
+                            appearance="primary"
+                            disabled={newTags.length === 0}
+                            onClick={() => {
+                                console.log("selectedOptions: ", selectedOptions);
+                                console.log("newTags: ", newTags);
+                                // { handleSaveClicked }
+                            }}
+                        >
+                            Save New Tags
+                        </Button>
+                    </div>
                 </div>
-                <div className={styles.comboBoxAndButton}>
-                    <Combobox
-                        appearance="outline"
-                        aria-labelledby={labelledBy}
-                        multiselect={true}
-                        placeholder="Select one or more tags"
-                        selectedOptions={selectedOptions}
-                        onOptionSelect={onSelect}
-                        onChange={(ev) => setInputValue(ev.target.value)} //added for filtering implementation
-                        onBlur={handleBlur} //Added to reset search/filter when Combobox loses focus
-                        onKeyDown={handleKeyDown} //Added for save on enter
-                        ref={comboboxInputRef}
-                        {...props}
-                    >
-                        {/* {options.map((option) => (
-                            <Option key={option}>{option}</Option>
-                        ))} */}
-                        {filteredOptions}
-                    </Combobox>
-                    <Button
-                        appearance="primary"
-                        disabled={newTags.length === 0}
-                        onClick={() => {
-                            console.log("selectedOptions: ", selectedOptions);
-                            console.log("newTags: ", newTags);
-                        }}
-                    >
-                        Save New Tags
-                    </Button>
-                </div>
-            </div>
-        </FluentProvider>
+            </FluentProvider>
 
-    );
+        );
+    }
 });
 ComboboxTagPicker.displayName = "ComboboxTagPicker";
 

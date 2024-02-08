@@ -2,8 +2,7 @@ import { IInputs, IOutputs } from "./generated/ManifestTypes";
 import { ComboboxTagPicker, IComboBoxTagPickerProps } from "./components/ComboBox";
 import { lightThemeCompanyBlue, darkThemeCompanyBlue } from "./customthemes/CompanyBlue";
 import * as React from "react";
-import { teamsLightTheme, teamsDarkTheme, webLightTheme, webDarkTheme, Option, Skeleton, Theme, Spinner, } from "@fluentui/react-components";
-import type { SkeletonProps } from "@fluentui/react-components";
+import { teamsLightTheme, teamsDarkTheme, webLightTheme, webDarkTheme, Option, Theme, Spinner, } from "@fluentui/react-components";
 
 export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IInputs, IOutputs> {
     private theComponent: ComponentFramework.ReactControl<IInputs, IOutputs>;
@@ -16,15 +15,16 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
     private themeSelected: Theme;
     private tagOptionsFromTable: string[];
     private loadedDataDone: boolean = false;
-
-
+    private tableName: string;
+    private initialSelectedTags: string[];
 
     /**
      * Empty constructor.
      */
     constructor() {
         // Bind the handleSelectedOptions method to 'this'
-        this.handleSelectedOptions = this.handleSelectedOptions.bind(this)
+        // this.handleSelectedOptions = this.handleSelectedOptions.bind(this);
+        this.saveTags = this.saveTags.bind(this);
     }
 
     /**
@@ -34,46 +34,28 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
      * @param notifyOutputChanged A callback method to alert the framework that the control has new outputs ready to be retrieved asynchronously.
      * @param state A piece of data that persists in one session for a single user. Can be set at any point in a controls life cycle by calling 'setControlState' in the Mode interface.
      */
-    public async init(
+    public init(
         _context: ComponentFramework.Context<IInputs>,
         _notifyOutputChanged: () => void,
-        _state: ComponentFramework.Dictionary
-    ): Promise<void> {
+        _state: ComponentFramework.Dictionary,
+    ){
         this.notifyOutputChanged = _notifyOutputChanged;
         this.context = _context;
         this.state = _state || {};
         var _themeSelected = this.context.parameters.Theme.raw;
+
         var _selectedOptionsOutput = this.context.parameters.Tags.raw;
-        var _tagOptionsFromTable: string[] = [];
+        this.tableName = this.context.parameters.TagsDB.raw || '';
+        this.selectedOptionsOutput = _selectedOptionsOutput ?? undefined;
 
-        console.log("In the init method");
-
-        // Get the table name from the context parameters
-        const tableName = this.context.parameters.TagsDB.raw || '';
-        console.log("Table Name: ", tableName);
-
-        if (tableName === undefined) {
+        if (this.tableName === undefined) {
             this.tagOptionsFromTable = ["No Options Retrieved", "Test 1", "Test 2"];
             this.loadedDataDone = true;
-            this.notifyOutputChanged();
         } else {
-            // Fetch the data from the table asynchronously
-            // console.log("Fetching data from the table: ", tableName)
-            // await this.getOptionsFromTable(tableName).then((options) => {
-            //     console.log("Data received from the table first: ", options);
-            //     _tagOptionsFromTable = options;
-            //     this.tagOptionsFromTable = _tagOptionsFromTable;
-            //     this.loadedDataDone = true;
-            //     this.notifyOutputChanged();
-            // }).catch((error) => {
-            //     console.error("Error fetching data from the table: ", error);
-            //     // Handle error appropriately
-            // });
-
             //Set temporary Values when testing locally only
-            this.tagOptionsFromTable = ["No Options Retrieved", "Test 1", "Test 2"];
-            this.loadedDataDone = true;
-            this.notifyOutputChanged();
+            // this.tagOptionsFromTable = ["No Options Retrieved", "Test 1", "Test 2"];
+            // this.loadedDataDone = true;
+            // this.notifyOutputChanged();
         }
 
         switch (_themeSelected) {
@@ -108,8 +90,8 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
     private handleSelectedOptions(options: string[]): void {
         console.log("In the handleSelectedOptions method: ", options);
         this.selectedOptionsOutput = options.join(",");
-        console.log("handleSelectedOptions - The selectedOptionsOutput is: ", this.selectedOptionsOutput)
-        this.notifyOutputChanged();
+        console.log("handleSelectedOptions - The selectedOptionsOutput in handleSelectedOptions is: ", this.selectedOptionsOutput)
+        // this.notifyOutputChanged;
     }
 
     /**
@@ -119,33 +101,19 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
      */
     public updateView(context: ComponentFramework.Context<IInputs>): React.ReactElement {
 
-        console.log("Starting the updateView method and the loadedDataDone is: ", this.loadedDataDone);
-        if (!this.loadedDataDone) {
-            console.log("Should display the Skeleton component now.");
-            // return React.createElement(
-            //     Skeleton, { width: "100%" }
-            // );
-            return React.createElement(
-                Spinner, { label: "Fetching Data from the Table" }
-            );
-        } else {
-            console.log("Should display the ComboBoxTagPicker component now.");
-            // Retrieve the value of themeSelected from above
-            let themeSelected: Theme = this.themeSelected as unknown as Theme;
+        // Retrieve the value of themeSelected from above
+        let themeSelected: Theme = this.themeSelected as unknown as Theme;
 
-            //retrieve the value of tagOptionsFromTable from above
-            let tagOptionsFromTablePassed: string[] = this.tagOptionsFromTable;
-
-            console.log("In the updateVew method: ", tagOptionsFromTablePassed);
-            return React.createElement(ComboboxTagPicker, {
-                availableOptions: this.availableOptions,
-                thisSelectedOption: this.thisSelectedOption,
-                initialSelectedOptionsString: this.selectedOptionsOutput,
-                theme: themeSelected,
-                tagOptionsFromTable: tagOptionsFromTablePassed,
-                onSelectedOptionsChanged: this.handleSelectedOptions
-            } as IComboBoxTagPickerProps);
-        }
+        return React.createElement(ComboboxTagPicker, {
+            availableOptions: this.availableOptions,
+            thisSelectedOption: this.thisSelectedOption,
+            initialSelectedOptionsString: this.selectedOptionsOutput,
+            theme: themeSelected,
+            context: this.context,
+            tableName: this.tableName,
+            onSelectedOptionsChanged: this.handleSelectedOptions,
+            onSaveTags: this.saveTags
+        } as IComboBoxTagPickerProps);
     }
 
     /**
@@ -153,6 +121,7 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
      * @returns an object based on nomenclature defined in manifest, expecting object[s] for property marked as “bound” or “output”
      */
     public getOutputs(): IOutputs {
+        // console.log("The selectedOptionsOutput in the getOutputs method is: ", this.selectedOptionsOutput)
         return { Tags: this.selectedOptionsOutput } as IOutputs;
     }
 
@@ -164,9 +133,40 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
         // Add code to cleanup control if necessary
     }
 
-    private async getOptionsFromTable(tableName: string): Promise<string[]> {
-        const result = await this.context.webAPI.retrieveMultipleRecords(tableName);
-        console.log("Data being returned from the table: ", result.entities.map(entity => entity['dtapps_tagtext']));
-        return result.entities.map(entity => entity['dtapps_tagtext']);
+    private saveTags(newTagsArray: string[]): void {
+        const tableName = this.context.parameters.TagsDB.raw; // Assuming 'TagsDB' is the parameter name for the table
+        const newTags = newTagsArray; // Assuming this.newTags holds the tags to save
+
+        if (!tableName || !newTags || newTags.length === 0) {
+            console.warn("No tags to save");
+            return;
+        } else {
+            newTags.forEach(tag => {
+                console.log("Saving tag: ", tag);
+                const data = {
+                    "dtapps_tagtext": tag
+                };
+
+                this.context.webAPI.createRecord(tableName, data)
+                    .then(result => {
+                        console.log(`Tag saved successfully: ${result.id}`);
+                        // Optionally, perform additional actions upon success, e.g., clear the newTags array or refresh the view
+                        // this.getOptionsFromTable(tableName).then((options) => {
+                        //     console.log("Data received from the table after saving: ", options);
+                        //     this.tagOptionsFromTable = options;
+                        //     this.loadedDataDone = true;
+                        //     this.notifyOutputChanged();
+                        //     this.updateView(this.context);
+                        // }).catch((error) => {
+                        //     console.error("Error fetching data from the table after saving: ", error);
+
+                        // });
+                    })
+                    .catch(error => {
+                        console.error("Error saving the tag", error);
+                        // Handle error, e.g., show an error message to the user
+                    });
+            });
+        }
     }
 }
