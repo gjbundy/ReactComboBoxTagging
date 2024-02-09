@@ -10,13 +10,12 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
     private context: ComponentFramework.Context<IInputs>;
     private state: ComponentFramework.Dictionary;
     private availableOptions: typeof Option[];
-    private thisSelectedOption: string | undefined;
+    private selectedOptions: string | undefined;
     private selectedOptionsOutput: string | undefined;
     private themeSelected: Theme;
     private tagOptionsFromTable: string[];
     private loadedDataDone: boolean = false;
     private tableName: string;
-    private initialSelectedTags: string[];
 
     /**
      * Empty constructor.
@@ -24,7 +23,7 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
     constructor() {
         // Bind the handleSelectedOptions method to 'this'
         // this.handleSelectedOptions = this.handleSelectedOptions.bind(this);
-        this.saveTags = this.saveTags.bind(this);
+        // this.saveTags = this.saveTags.bind(this);
     }
 
     /**
@@ -43,10 +42,7 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
         this.context = _context;
         this.state = _state || {};
         var _themeSelected = this.context.parameters.Theme.raw;
-
-        var _selectedOptionsOutput = this.context.parameters.Tags.raw;
         this.tableName = this.context.parameters.TagsDB.raw || '';
-        this.selectedOptionsOutput = _selectedOptionsOutput ?? undefined;
 
         if (this.tableName === undefined) {
             this.tagOptionsFromTable = ["No Options Retrieved", "Test 1", "Test 2"];
@@ -84,14 +80,14 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
                 this.themeSelected = lightThemeCompanyBlue
                 break
         }
-        this.selectedOptionsOutput = _selectedOptionsOutput ?? undefined;
+        //this.selectedOptionsOutput = _selectedOptionsOutput ?? undefined;
     }
 
-    private handleSelectedOptions(options: string[]): void {
-        console.log("In the handleSelectedOptions method: ", options);
-        this.selectedOptionsOutput = options.join(",");
-        console.log("handleSelectedOptions - The selectedOptionsOutput in handleSelectedOptions is: ", this.selectedOptionsOutput)
-        // this.notifyOutputChanged;
+    private handleSelectedOptionsChange = (selectedOptionsString: string) => {
+        console.log("In the handleSelectedOptions method: ", selectedOptionsString);
+        this.selectedOptions = selectedOptionsString;
+        console.log("handleSelectedOptions - The selectedOptions in handleSelectedOptions is: ", this.selectedOptions)
+        this.notifyOutputChanged();
     }
 
     /**
@@ -105,14 +101,14 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
         let themeSelected: Theme = this.themeSelected as unknown as Theme;
 
         return React.createElement(ComboboxTagPicker, {
-            availableOptions: this.availableOptions,
-            thisSelectedOption: this.thisSelectedOption,
-            initialSelectedOptionsString: this.selectedOptionsOutput,
-            theme: themeSelected,
             context: this.context,
             tableName: this.tableName,
-            onSelectedOptionsChanged: this.handleSelectedOptions,
-            onSaveTags: this.saveTags
+            thisSelectedOption: this.selectedOptions,
+            availableOptions: this.availableOptions,
+            theme: themeSelected,
+            initialSelectedOptionsString: this.selectedOptionsOutput,
+            onSelectedOptionsChange: this.handleSelectedOptionsChange.bind(this),
+            //onSaveTags: this.saveTags
         } as IComboBoxTagPickerProps);
     }
 
@@ -121,8 +117,8 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
      * @returns an object based on nomenclature defined in manifest, expecting object[s] for property marked as “bound” or “output”
      */
     public getOutputs(): IOutputs {
-        // console.log("The selectedOptionsOutput in the getOutputs method is: ", this.selectedOptionsOutput)
-        return { Tags: this.selectedOptionsOutput } as IOutputs;
+        console.log("The selectedOptionsOutput in the getOutputs method is: ", this.selectedOptions)
+        return { Tags: this.selectedOptions } as IOutputs;
     }
 
     /**

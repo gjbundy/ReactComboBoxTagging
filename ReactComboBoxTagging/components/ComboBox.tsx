@@ -1,5 +1,5 @@
 import * as React from "react";
-import { useConst, useForceUpdate } from '@fluentui/react-hooks';
+import { useForceUpdate } from '@fluentui/react-hooks';
 import { IInputs } from "../generated/ManifestTypes";
 import { Option, Combobox, Theme, Spinner, makeStyles, shorthands, tokens, useId, Tag, useComboboxFilter, FluentProvider, Button } from "@fluentui/react-components"
 import type { ComboboxProps } from "@fluentui/react-components";
@@ -51,12 +51,12 @@ export interface IComboBoxTagPickerProps extends ComboboxProps {
     availableOptions: typeof Option[];
     theme: Theme;
     initialSelectedOptionsString?: string;
-    onSelectedOptionsChanged?: (selectedOptions: string[]) => void;
-    onSaveTags: (newTags: string[]) => void;
+    onSelectedOptionsChange: (selectedOptionsString: string) => void;
+    onSaveTags?: (newTags: string[]) => void;
 }
 
 export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => {
-    const { thisSelectedOption, availableOptions, theme, onSaveTags, context, tableName } = props;
+    const { thisSelectedOption, availableOptions, theme, onSaveTags, context, tableName, onSelectedOptionsChange } = props;
     const [optionsFromTable, setOptionsFromTable] = useState<string[]>([]);
     const styles = useStyles();
     const forceUpdate = useForceUpdate();
@@ -67,6 +67,10 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
     const [isComponentLoading, setIsLoading] = React.useState<boolean>(true);
     const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
     const newTagStyle = { backgroundColor: 'green', color: 'white' }; //added for new tag styling
+
+    //get the existing tags
+    const initialTags = props.context.parameters.Tags.raw || undefined;
+    console.log("Initial tags in ComboBox are: " + initialTags);
 
     // refs for managing focus when removing tags
     const selectedListRef = React.useRef<HTMLUListElement>(null);
@@ -81,6 +85,9 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
         noOptionsMessage: 'No tags match your search. Press enter to add a new tag.',
     });
 
+    // Convert selectedOptions array to string
+    const selectedOptionsString = selectedOptions.join(',');
+
     const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter' && inputValue.trim() !== '' && !selectedOptions.includes(inputValue)) {
             // Add the new tag (current inputValue) to selectedOptions
@@ -89,13 +96,6 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
 
             // Add the new tag to the newTags state
             setNewTags((prevNewTags) => [...prevNewTags, inputValue.trim()]);
-
-
-            // Optionally, call onSelectedOptionsChanged if it needs to trigger external actions
-            if (props.onSelectedOptionsChanged) {
-                props.onSelectedOptionsChanged(newSelectedOptions);
-            }
-
             // Reset inputValue to clear the combobox input field
             setInputValue('');
         }
@@ -109,24 +109,21 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
             setOptionsFromTable(result.entities.map(entity => entity['dtapps_tagtext']));
         };
         getOptionsFromTable().then(() => {
-            console.log("inside of the then clause for getOptionsFromTable, with props.initialSelectedOptionsString: ", props.initialSelectedOptionsString);
-            if(props.initialSelectedOptionsString) {
-                const initialOptions = props.initialSelectedOptionsString.split(",").map((o) => o.trim());
+            console.log("inside of the then clause for getOptionsFromTable, with initialTags: ", initialTags);
+            if(initialTags) {
+                const initialOptions = initialTags.split(",").map((o) => o.trim());
                 setSelectedOptions(initialOptions);
-                if (props.onSelectedOptionsChanged) {
-                    props.onSelectedOptionsChanged(initialOptions);
-                }
             }
             setIsLoading(false);
         });
-    }, [context, tableName, props.initialSelectedOptionsString]);
+    }, [context, tableName, initialTags]);
+
+    React.useEffect(() => {
+        onSelectedOptionsChange(selectedOptionsString);
+    }, [selectedOptionsString]);
 
     const onSelect: ComboboxProps["onOptionSelect"] = (event, data) => {
-        //console.log("onSelect: ", data.selectedOptions);
         setSelectedOptions(data.selectedOptions);
-        if (props.onSelectedOptionsChanged) {
-            props.onSelectedOptionsChanged(data.selectedOptions);
-        }
     };
 
     const onTagClick = (option: string, index: number) => {
@@ -136,11 +133,9 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
             const updatedNewTags = newTags.filter((o) => o !== option);
             setNewTags(updatedNewTags);
         }
-        setSelectedOptions(updatedOptions);
-        if (props.onSelectedOptionsChanged) {
-            props.onSelectedOptionsChanged(updatedOptions);
-        }
+        //Need to see if i have to update the string here as well
     };
+
 
     const labelledBy =
         selectedOptions.length > 0 ? `${comboId} ${selectedListId}` : comboId;
