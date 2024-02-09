@@ -134,6 +134,7 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
             setNewTags(updatedNewTags);
         }
         //Need to see if i have to update the string here as well
+        setSelectedOptions(updatedOptions);
     };
 
 
