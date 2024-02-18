@@ -58,6 +58,7 @@ const useStyles = makeStyles({
 export interface IComboBoxTagPickerProps extends ComboboxProps {
     availableOptions: typeof Option[];
     context: ComponentFramework.Context<IInputs>;
+    disabled: boolean;
     initialSelectedOptionsString?: string;
     multiSelect: boolean;
     onSelectedOptionsChange: (selectedOptionsString: string) => void;
@@ -70,7 +71,7 @@ export interface IComboBoxTagPickerProps extends ComboboxProps {
 }
 
 export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => {
-    const { multiSelect, availableOptions, theme, onSaveTags, context, tableName, onSelectedOptionsChange } = props;
+    const { multiSelect, disabled, availableOptions, theme, onSaveTags, context, tableName, onSelectedOptionsChange } = props;
     const [optionsFromTable, setOptionsFromTable] = useState<string[]>([]);
     const placeholderText = multiSelect ? "Select one or more records" : "Select a record";
     const styles = useStyles();
@@ -164,17 +165,19 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
                         <FluentProvider theme={props.theme}>
                             {selectedOptions.length ? (
                                 selectedOptions.map((option, i) => (
-                                    <Tag key={i}
+                                    <Tag
+                                        key={i}
                                         appearance={props.tagAppearance as TagAppearance}
                                         shape={props.tagShape as TagShape}
-                                        dismissible
+                                        dismissible={!props.disabled}
                                         dismissIcon={{ "aria-label": "remove" }}
-                                        onClick={() => onTagClick(option, i)}
+                                        onClick={() => !props.disabled && onTagClick(option, i)} // Add conditional check for disabled state
                                         style={newTags.includes(option) ? newTagStyle : {}}
                                     >
                                         {option}
                                     </Tag>
-                                ))) : null}
+                                ))
+                            ) : null}
                         </FluentProvider>
                     </div>
                     <div className={styles.comboBoxAndButton}>

@@ -139,6 +139,7 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
         return React.createElement(ComboboxTagPicker, {
             availableOptions: this.availableOptions,
             context: this.context,
+            disabled: context.mode.isControlDisabled,
             initialSelectedOptionsString: this.selectedOptionsOutput,
             multiSelect: this.multiSelect,
             onSelectedOptionsChange: this.handleSelectedOptionsChange.bind(this),
