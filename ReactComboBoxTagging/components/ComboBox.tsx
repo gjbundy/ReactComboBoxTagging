@@ -1,11 +1,22 @@
 import * as React from "react";
-import { useForceUpdate } from '@fluentui/react-hooks';
 import { IInputs } from "../generated/ManifestTypes";
-import { Option, Combobox, Theme, Spinner, makeStyles, shorthands, tokens, useId, Tag, useComboboxFilter, FluentProvider, Button } from "@fluentui/react-components"
+import { Option, 
+        Combobox, 
+        Theme,
+        Spinner,
+        makeStyles,
+        shorthands,
+        tokens,
+        useId,
+        Tag,
+        TagShape,
+        TagAppearance,
+        useComboboxFilter,
+        FluentProvider,
+        Button } from "@fluentui/react-components"
 import type { ComboboxProps } from "@fluentui/react-components";
 
 const useState = React.useState;
-
 
 const useStyles = makeStyles({
     root: {
@@ -45,32 +56,35 @@ const useStyles = makeStyles({
 });
 
 export interface IComboBoxTagPickerProps extends ComboboxProps {
-    context: ComponentFramework.Context<IInputs>;
-    tableName: string;
-    thisSelectedOption: string | undefined;
     availableOptions: typeof Option[];
-    theme: Theme;
+    context: ComponentFramework.Context<IInputs>;
     initialSelectedOptionsString?: string;
+    multiSelect: boolean;
     onSelectedOptionsChange: (selectedOptionsString: string) => void;
     onSaveTags?: (newTags: string[]) => void;
+    tableName: string;
+    tagAppearance: string;
+    tagShape: string;
+    theme: Theme;
+    thisSelectedOption: string | undefined; 
 }
 
 export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => {
-    const { thisSelectedOption, availableOptions, theme, onSaveTags, context, tableName, onSelectedOptionsChange } = props;
+    const { multiSelect, availableOptions, theme, onSaveTags, context, tableName, onSelectedOptionsChange } = props;
     const [optionsFromTable, setOptionsFromTable] = useState<string[]>([]);
+    const placeholderText = multiSelect ? "Select one or more records" : "Select a record";
     const styles = useStyles();
-    const forceUpdate = useForceUpdate();
     const comboId = useId("combo-multi");
     const selectedListId = `${comboId}-selection`;
     const [inputValue, setInputValue] = React.useState(''); //added for filtering implementation
     const [newTags, setNewTags] = React.useState<string[]>([]); //added for tracking new tags
     const [isComponentLoading, setIsLoading] = React.useState<boolean>(true);
     const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
+    //const [themeSelected, setThemeSelected] = useState<Theme>(theme);
     const newTagStyle = { backgroundColor: 'green', color: 'white' }; //added for new tag styling
 
     //get the existing tags
     const initialTags = props.context.parameters.Tags.raw || undefined;
-    console.log("Initial tags in ComboBox are: " + initialTags);
 
     // refs for managing focus when removing tags
     const selectedListRef = React.useRef<HTMLUListElement>(null);
@@ -103,13 +117,10 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
 
     React.useEffect(() => {
         const getOptionsFromTable = async () => {
-            console.log("inside the useEffect for getOptionsFromTable. Starting async call to retrieveMultipleRecords, with tableName: ", tableName);
             const result = await props.context.webAPI.retrieveMultipleRecords(tableName);
-            console.log("result: ", result.entities.map(entity => entity['dtapps_tagtext']));
             setOptionsFromTable(result.entities.map(entity => entity['dtapps_tagtext']));
         };
         getOptionsFromTable().then(() => {
-            console.log("inside of the then clause for getOptionsFromTable, with initialTags: ", initialTags);
             if(initialTags) {
                 const initialOptions = initialTags.split(",").map((o) => o.trim());
                 setSelectedOptions(initialOptions);
@@ -156,8 +167,8 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
                             {selectedOptions.length ? (
                                 selectedOptions.map((option, i) => (
                                     <Tag key={i}
-                                        appearance="brand"
-                                        shape="circular"
+                                        appearance={props.tagAppearance as TagAppearance}
+                                        shape={props.tagShape as TagShape}
                                         dismissible
                                         dismissIcon={{ "aria-label": "remove" }}
                                         onClick={() => onTagClick(option, i)}
@@ -172,8 +183,8 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
                         <Combobox
                             appearance="outline"
                             aria-labelledby={labelledBy}
-                            multiselect={true}
-                            placeholder="Select one or more tags"
+                            multiselect={props.multiSelect}
+                            placeholder={placeholderText}
                             selectedOptions={selectedOptions}
                             onOptionSelect={onSelect}
                             onChange={(ev) => setInputValue(ev.target.value)} //added for filtering implementation
@@ -190,10 +201,13 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
                             onClick={() => {
                                 console.log("selectedOptions: ", selectedOptions);
                                 console.log("newTags: ", newTags);
-                                // { handleSaveClicked }
+                                if (onSaveTags) {
+                                    onSaveTags(newTags);
+                                    setNewTags([]);
+                                }
                             }}
                         >
-                            Save New Tags
+                            Save New Entry
                         </Button>
                     </div>
                 </div>

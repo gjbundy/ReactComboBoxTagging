@@ -2,17 +2,20 @@ import { IInputs, IOutputs } from "./generated/ManifestTypes";
 import { ComboboxTagPicker, IComboBoxTagPickerProps } from "./components/ComboBox";
 import { lightThemeCompanyBlue, darkThemeCompanyBlue } from "./customthemes/CompanyBlue";
 import * as React from "react";
-import { teamsLightTheme, teamsDarkTheme, webLightTheme, webDarkTheme, Option, Theme, Spinner, } from "@fluentui/react-components";
+import { teamsLightTheme, teamsDarkTheme, webLightTheme, webDarkTheme, Option, Theme } from "@fluentui/react-components";
 
 export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IInputs, IOutputs> {
     private theComponent: ComponentFramework.ReactControl<IInputs, IOutputs>;
     private notifyOutputChanged: () => void;
     private context: ComponentFramework.Context<IInputs>;
+    private multiSelect: boolean;
     private state: ComponentFramework.Dictionary;
     private availableOptions: typeof Option[];
     private selectedOptions: string | undefined;
     private selectedOptionsOutput: string | undefined;
     private themeSelected: Theme;
+    private tagShape: string;
+    private tagAppearance: string;
     private tagOptionsFromTable: string[];
     private loadedDataDone: boolean = false;
     private tableName: string;
@@ -21,9 +24,6 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
      * Empty constructor.
      */
     constructor() {
-        // Bind the handleSelectedOptions method to 'this'
-        // this.handleSelectedOptions = this.handleSelectedOptions.bind(this);
-        // this.saveTags = this.saveTags.bind(this);
     }
 
     /**
@@ -37,11 +37,14 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
         _context: ComponentFramework.Context<IInputs>,
         _notifyOutputChanged: () => void,
         _state: ComponentFramework.Dictionary,
-    ){
+    ) {
         this.notifyOutputChanged = _notifyOutputChanged;
         this.context = _context;
         this.state = _state || {};
         var _themeSelected = this.context.parameters.Theme.raw;
+        var _tagShape = this.context.parameters.TagShape.raw;
+        var _tagAppearance = this.context.parameters.TagAppearance.raw;
+        var _controlType = this.context.parameters.ControlType.raw;
         this.tableName = this.context.parameters.TagsDB.raw || '';
 
         if (this.tableName === undefined) {
@@ -54,6 +57,17 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
             // this.notifyOutputChanged();
         }
 
+        switch (_controlType) {
+            case "Multiple Selections":
+                this.multiSelect = true;
+                break;
+            case "Single Selection Only": //User has selected single-Select Optiopn
+                this.multiSelect = false;
+                break;
+            default: 
+                this.multiSelect = false;
+                break;
+        }
         switch (_themeSelected) {
             case "Web Light Theme":
                 this.themeSelected = webLightTheme
@@ -80,13 +94,35 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
                 this.themeSelected = lightThemeCompanyBlue
                 break
         }
-        //this.selectedOptionsOutput = _selectedOptionsOutput ?? undefined;
+        switch (_tagShape) {
+            case "Circular":
+                this.tagShape = "circular"
+                break
+            case "Rounded":
+                this.tagShape = "rounded"
+                break
+            default:
+                this.tagShape = "circular"
+                break
+        }
+        switch (_tagAppearance) {
+            case "Brand":
+                this.tagAppearance = "brand"
+                break
+            case "Filled":
+                this.tagAppearance = "filled"
+                break
+            case "Outline":
+                this.tagAppearance = "outline"
+                break
+            default:
+                this.tagAppearance = "brand"
+                break
+        }
     }
 
     private handleSelectedOptionsChange = (selectedOptionsString: string) => {
-        console.log("In the handleSelectedOptions method: ", selectedOptionsString);
         this.selectedOptions = selectedOptionsString;
-        console.log("handleSelectedOptions - The selectedOptions in handleSelectedOptions is: ", this.selectedOptions)
         this.notifyOutputChanged();
     }
 
@@ -101,14 +137,17 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
         let themeSelected: Theme = this.themeSelected as unknown as Theme;
 
         return React.createElement(ComboboxTagPicker, {
-            context: this.context,
-            tableName: this.tableName,
-            thisSelectedOption: this.selectedOptions,
             availableOptions: this.availableOptions,
-            theme: themeSelected,
+            context: this.context,
             initialSelectedOptionsString: this.selectedOptionsOutput,
+            multiSelect: this.multiSelect,
             onSelectedOptionsChange: this.handleSelectedOptionsChange.bind(this),
-            //onSaveTags: this.saveTags
+            onSaveTags: this.saveTags.bind(this),
+            tableName: this.tableName,
+            tagAppearance: this.tagAppearance,
+            tagShape: this.tagShape,
+            theme: themeSelected,
+            thisSelectedOption: this.selectedOptions,
         } as IComboBoxTagPickerProps);
     }
 
@@ -117,7 +156,6 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
      * @returns an object based on nomenclature defined in manifest, expecting object[s] for property marked as “bound” or “output”
      */
     public getOutputs(): IOutputs {
-        console.log("The selectedOptionsOutput in the getOutputs method is: ", this.selectedOptions)
         return { Tags: this.selectedOptions } as IOutputs;
     }
 
@@ -130,8 +168,8 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
     }
 
     private saveTags(newTagsArray: string[]): void {
-        const tableName = this.context.parameters.TagsDB.raw; // Assuming 'TagsDB' is the parameter name for the table
-        const newTags = newTagsArray; // Assuming this.newTags holds the tags to save
+        const tableName = this.context.parameters.TagsDB.raw;
+        const newTags = newTagsArray;
 
         if (!tableName || !newTags || newTags.length === 0) {
             console.warn("No tags to save");
@@ -146,6 +184,7 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
                 this.context.webAPI.createRecord(tableName, data)
                     .then(result => {
                         console.log(`Tag saved successfully: ${result.id}`);
+                        this.updateView(this.context);
                         // Optionally, perform additional actions upon success, e.g., clear the newTags array or refresh the view
                         // this.getOptionsFromTable(tableName).then((options) => {
                         //     console.log("Data received from the table after saving: ", options);

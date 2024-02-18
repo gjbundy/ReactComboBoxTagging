@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest>
-  <control namespace="GBControls" constructor="ReactComboBoxTagging" version="0.0.1" display-name-key="ReactComboBoxTagging" description-key="ReactComboBoxTagging description" control-type="virtual" >
+  <control namespace="GBControls" constructor="ReactComboBoxTagging" version="0.0.1" display-name-key="ReactComboBoxTagging" description-key="ReactComboBoxTagging description" control-type="virtual">
     <external-service-usage enabled="false" />
     <property name="Tags" display-name-key="Tags" description-key="Tags" of-type="SingleLine.Text" usage="bound" required="true" />
     <property name="TagsDB" display-name-key="TagsDB" description-key="TagsDB" of-type="SingleLine.Text" usage="input" required="true" />
@@ -13,18 +13,31 @@
       <value name="Light Theme Company Blue" display-name-key="Light Theme Company Blue" description-key="Light Theme Company Blue">Company Blue Light Theme</value>
       <value name="Dark Theme Company Blue" display-name-key="Dark Theme Company Blue" description-key="Dark Theme Company Blue">Company Blue Dark Theme</value>
     </property>
+    <property name="ControlType" display-name-key="ControlType" description-key="This allows you to specify if the control is a multi-select or single select only control." of-type="Enum" usage="input" required="true">
+      <value name="Multiple Selections" display-name-key="Multiple Selections" description-key="Single Selection Only">Multiple Selections</value>
+      <value name="Single Selection Only" display-name-key="Single Selection Only" description-key="Single Selection Only">Single Selection Only</value>
+    </property>
+    <property name="TagShape" display-name-key="TagShape" description-key="This allows you to specify FluentUI 9 value for the Shape of the tags." of-type="Enum" usage="input" required="false">
+      <value name="circular" display-name-key="circular" description-key="circular">Circular</value>
+      <value name="rounded" display-name-key="rounded" description-key="rounded">Rounded</value>
+    </property>
+    <property name="TagAppearance" display-name-key="TagAppearance" description-key="This allows you to specify FluentUI 9 value for the Appearance of the tags." of-type="Enum" usage="input" required="false">
+      <value name="brand" display-name-key="brand" description-key="brand">Brand</value>
+      <value name="filled" display-name-key="filled" description-key="filled">Filled</value>
+      <value name="outline" display-name-key="outline" description-key="outline">Outline</value>
+    </property>
     <resources>
-      <code path="index.ts" order="1"/>
-      <platform-library name="React" version="16.8.6" />
-      <platform-library name="Fluent" version="8.29.0" />
-      <!-- UNCOMMENT TO ADD MORE RESOURCES
+    <code path="index.ts" order="1"/>
+    <platform-library name="React" version="16.8.6" />
+    <platform-library name="Fluent" version="8.29.0" />
+    <!-- UNCOMMENT TO ADD MORE RESOURCES
       <css path="css/ReactComboBoxTagging.css" order="1" />
       <resx path="strings/ReactComboBoxTagging.1033.resx" version="1.0.0" />
       -->
-    </resources>
-    <feature-usage>
-      <uses-feature name="Utility" required="true" />
-      <uses-feature name="WebAPI" required="true" />
-    </feature-usage>
-  </control>
+  </resources>
+  <feature-usage>
+    <uses-feature name="Utility" required="true" />
+    <uses-feature name="WebAPI" required="true" />
+  </feature-usage>
+</control>
 </manifest>
