@@ -80,7 +80,6 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
     const [newTags, setNewTags] = React.useState<string[]>([]); //added for tracking new tags
     const [isComponentLoading, setIsLoading] = React.useState<boolean>(true);
     const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-    //const [themeSelected, setThemeSelected] = useState<Theme>(theme);
     const newTagStyle = { backgroundColor: 'green', color: 'white' }; //added for new tag styling
 
     //get the existing tags
@@ -110,6 +109,7 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
 
             // Add the new tag to the newTags state
             setNewTags((prevNewTags) => [...prevNewTags, inputValue.trim()]);
+
             // Reset inputValue to clear the combobox input field
             setInputValue('');
         }
@@ -138,13 +138,11 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
     };
 
     const onTagClick = (option: string, index: number) => {
-        // remove selected option
         const updatedOptions = selectedOptions.filter((o) => o !== option);
         if (newTags.includes(option)) {
             const updatedNewTags = newTags.filter((o) => o !== option);
             setNewTags(updatedNewTags);
         }
-        //Need to see if i have to update the string here as well
         setSelectedOptions(updatedOptions);
     };
 
@@ -199,8 +197,6 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
                             appearance="primary"
                             disabled={newTags.length === 0}
                             onClick={() => {
-                                console.log("selectedOptions: ", selectedOptions);
-                                console.log("newTags: ", newTags);
                                 if (onSaveTags) {
                                     onSaveTags(newTags);
                                     setNewTags([]);

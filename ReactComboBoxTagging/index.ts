@@ -183,23 +183,10 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
 
                 this.context.webAPI.createRecord(tableName, data)
                     .then(result => {
-                        console.log(`Tag saved successfully: ${result.id}`);
                         this.updateView(this.context);
-                        // Optionally, perform additional actions upon success, e.g., clear the newTags array or refresh the view
-                        // this.getOptionsFromTable(tableName).then((options) => {
-                        //     console.log("Data received from the table after saving: ", options);
-                        //     this.tagOptionsFromTable = options;
-                        //     this.loadedDataDone = true;
-                        //     this.notifyOutputChanged();
-                        //     this.updateView(this.context);
-                        // }).catch((error) => {
-                        //     console.error("Error fetching data from the table after saving: ", error);
-
-                        // });
                     })
                     .catch(error => {
                         console.error("Error saving the tag", error);
-                        // Handle error, e.g., show an error message to the user
                     });
             });
         }
