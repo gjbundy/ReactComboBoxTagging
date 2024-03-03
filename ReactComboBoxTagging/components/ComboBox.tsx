@@ -171,7 +171,7 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
                                         shape={props.tagShape as TagShape}
                                         dismissible={!props.disabled}
                                         dismissIcon={{ "aria-label": "remove" }}
-                                        onClick={() => !props.disabled && onTagClick(option, i)} // Add conditional check for disabled state
+                                        onClick={() => !props.disabled && onTagClick(option, i)}
                                         style={newTags.includes(option) ? newTagStyle : {}}
                                     >
                                         {option}
