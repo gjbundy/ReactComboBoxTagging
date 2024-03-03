@@ -173,11 +173,9 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
         const newTags = newTagsArray;
 
         if (!tableName || !newTags || newTags.length === 0) {
-            console.warn("No tags to save");
             return;
         } else {
             newTags.forEach(tag => {
-                console.log("Saving tag: ", tag);
                 const data = {
                     "dtapps_tagtext": tag
                 };
@@ -187,7 +185,6 @@ export class ReactComboBoxTagging implements ComponentFramework.ReactControl<IIn
                         this.updateView(this.context);
                     })
                     .catch(error => {
-                        console.error("Error saving the tag", error);
                     });
             });
         }
