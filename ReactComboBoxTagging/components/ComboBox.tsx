@@ -123,7 +123,7 @@ export const ComboboxTagPicker = React.memo((props: IComboBoxTagPickerProps) => 
         };
         getOptionsFromTable().then(() => {
             if(initialTags) {
-                const initialOptions = initialTags.split(",").map((o) => o.trim());
+                const initialOptions = initialTags.split(",").map((o) => o.trim()).sort(); //Changed to .sort() to ensure consistent order
                 setSelectedOptions(initialOptions);
             }
             setIsLoading(false);
